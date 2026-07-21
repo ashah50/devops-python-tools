@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# local data / secrets - never commit
+*.json
+.env
+.aws/
+credentials
