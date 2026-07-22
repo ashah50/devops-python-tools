@@ -32,12 +32,23 @@ def untagged(resp):
                 ids.append((inst["InstanceId"], inst["InstanceType"]))
     return ids
 
+def bucket_report():
+    s3 = boto3.client("s3", region_name="us-east-1")
+    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]  # bucket reach-in
+    report = {}
+    for name in buckets:
+        objs = s3.list_objects_v2(Bucket=name).get("Contents", [])  # .get guard for empty
+        total = sum(o["Size"] for o in objs)  # sum + reach-in
+        report[name] = (len(objs), total)
+    return report
+
 def main():
     parser = argparse.ArgumentParser(description="Audit a real AWS account (read-only)")
     parser.add_argument("--regions", action="store_true", help="list enable regions")
     parser.add_argument("--open-ports", action="store_true", help="find security groups open to 0.0.0.0/0")
     parser.add_argument("--all-regions", action="store_true", help="with --open-ports, scan every region")
     parser.add_argument("--untagged", action="store_true", help="find untagged EC2 instances")
+    parser.add_argument("--buckets", action="store_true", help="inventory S3 buckets (object count + size)")
     args = parser.parse_args()
 
     if args.regions:
@@ -57,6 +68,13 @@ def main():
          ec2 = boto3.client("ec2", region_name="us-east-1")
          found = untagged(ec2.describe_instances())
          print("UNTAGGED:", found if found else "none")
+    elif args.buckets:
+        report = bucket_report()
+        if report:
+            for name, (count,size) in report.items():
+                print(f"{name}: {count} objects, {size} bytes")
+        else:
+            print("No buckets.")
     else:
         parser.print_help()
 
