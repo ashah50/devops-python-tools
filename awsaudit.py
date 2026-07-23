@@ -42,6 +42,19 @@ def bucket_report():
         report[name] = (len(objs), total)
     return report
 
+def is_public(s3, bucket):
+    acl = s3.get_bucket_acl(Bucket=bucket)
+    for grant in acl["Grants"]:
+        uri = grant.get("Grantee", {}).get("URI", "")
+        if uri.endswith("AllUsers"):
+            return True
+    return False
+
+def public_buckets():
+    s3 = boto3.client("s3", region_name="us-east-1")
+    buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
+    return [name for name in buckets if is_public(s3, name)]
+
 def main():
     parser = argparse.ArgumentParser(description="Audit a real AWS account (read-only)")
     parser.add_argument("--regions", action="store_true", help="list enable regions")
@@ -49,6 +62,7 @@ def main():
     parser.add_argument("--all-regions", action="store_true", help="with --open-ports, scan every region")
     parser.add_argument("--untagged", action="store_true", help="find untagged EC2 instances")
     parser.add_argument("--buckets", action="store_true", help="inventory S3 buckets (object count + size)")
+    parser.add_argument("--public-buckets", action="store_true", help="find S3 buckets open to the public")
     args = parser.parse_args()
 
     if args.regions:
@@ -65,9 +79,9 @@ def main():
         else:
             print("No security groups open to the world.")
     elif args.untagged:
-         ec2 = boto3.client("ec2", region_name="us-east-1")
-         found = untagged(ec2.describe_instances())
-         print("UNTAGGED:", found if found else "none")
+        ec2 = boto3.client("ec2", region_name="us-east-1")
+        found = untagged(ec2.describe_instances())
+        print("UNTAGGED:", found if found else "none")
     elif args.buckets:
         report = bucket_report()
         if report:
@@ -75,6 +89,9 @@ def main():
                 print(f"{name}: {count} objects, {size} bytes")
         else:
             print("No buckets.")
+    elif args.public_buckets:
+        found = public_buckets()
+        print("PUBLIC BUCKETS:", found if found else "none")
     else:
         parser.print_help()
 

@@ -17,6 +17,8 @@ python3 awsaudit.py --open-ports --all-regions   # scan every region
 python3 awsaudit.py --untagged                   # EC2 instances with no 
 tags 
 python3 awsaudit.py --buckets                    # S3 bucket inventory (object count + size)
+python3 awsaudit.py --public-buckets             # find S3 buckets open to the public
+
 Finds security groups exposed to the internet and untagged instances —
 common compliance and cost-hygiene checks. 
                                         
