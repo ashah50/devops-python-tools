@@ -55,6 +55,15 @@ def public_buckets():
     buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
     return [name for name in buckets if is_public(s3, name)]
 
+def users_without_mfa(iam):
+    flagged = []
+    for u in iam.list_users()["Users"]:
+        name = u["UserName"]
+        mfa = iam.list_mfa_devices(UserName=name)["MFADevices"]
+        if not mfa:
+            flagged.append(name)
+    return flagged
+
 def main():
     parser = argparse.ArgumentParser(description="Audit a real AWS account (read-only)")
     parser.add_argument("--regions", action="store_true", help="list enable regions")
@@ -63,6 +72,7 @@ def main():
     parser.add_argument("--untagged", action="store_true", help="find untagged EC2 instances")
     parser.add_argument("--buckets", action="store_true", help="inventory S3 buckets (object count + size)")
     parser.add_argument("--public-buckets", action="store_true", help="find S3 buckets open to the public")
+    parser.add_argument("--no-mfa", action="store_true", help="find IAM users without MFA enabled")
     args = parser.parse_args()
 
     if args.regions:
@@ -92,6 +102,10 @@ def main():
     elif args.public_buckets:
         found = public_buckets()
         print("PUBLIC BUCKETS:", found if found else "none")
+    elif args.no_mfa:
+        iam = boto3.client("iam", region_name="us-east-1")
+        found = users_without_mfa(iam)
+        print("USERS WITHOUT MFA:", found if found else "none")
     else:
         parser.print_help()
 
