@@ -1,5 +1,8 @@
+from datetime import datetime, timezone
 import argparse
 import boto3
+
+
 
 def get_regions(ec2):
     return [r["RegionName"] for r in ec2.describe_regions()["Regions"]]
@@ -64,6 +67,19 @@ def users_without_mfa(iam):
             flagged.append(name)
     return flagged
 
+def old_access_keys(iam, days=90):
+    flagged = []
+    now = datetime.now(timezone.utc)
+    for u in iam.list_users()["Users"]:
+        name = u["UserName"]
+        for key in iam.list_access_keys(UserName=name)["AccessKeyMetadata"]:
+            if key["Status"] != "Active":
+                continue
+            age = now - key["CreateDate"]
+            if age.days > days:
+                flagged.append((name, key["AccessKeyId"], age.days))
+    return flagged
+
 def main():
     parser = argparse.ArgumentParser(description="Audit a real AWS account (read-only)")
     parser.add_argument("--regions", action="store_true", help="list enable regions")
@@ -73,6 +89,7 @@ def main():
     parser.add_argument("--buckets", action="store_true", help="inventory S3 buckets (object count + size)")
     parser.add_argument("--public-buckets", action="store_true", help="find S3 buckets open to the public")
     parser.add_argument("--no-mfa", action="store_true", help="find IAM users without MFA enabled")
+    parser.add_argument("--old-keys", action="store_true", help="find IAM access keys older than 90 days")
     args = parser.parse_args()
 
     if args.regions:
@@ -106,6 +123,14 @@ def main():
         iam = boto3.client("iam", region_name="us-east-1")
         found = users_without_mfa(iam)
         print("USERS WITHOUT MFA:", found if found else "none")
+    elif args.old_keys:
+        iam = boto3.client("iam", "us-east-1")
+        found = old_access_keys(iam)
+        if found:
+            for name, key_id, age in found:
+                print(f"{name}  {key_id}  {age} days old")
+        else:
+            print("No access keys older than 90 days.")
     else:
         parser.print_help()
 

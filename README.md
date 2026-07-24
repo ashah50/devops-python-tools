@@ -19,6 +19,7 @@ tags
 python3 awsaudit.py --buckets                    # S3 bucket inventory (object count + size)
 python3 awsaudit.py --public-buckets             # find S3 buckets open to the public
 python3 awsaudit.py --no-mfa                     # IAM users without MFA enabled
+python3 awsaudit.py --old-keys                   # IAM access keys older than 90 days
 
 Finds security groups exposed to the internet and untagged instances —
 common compliance and cost-hygiene checks. 
