@@ -1,4 +1,5 @@
 import argparse
+import re
 from collections import Counter, defaultdict
 
 def find_lines(logfile, level):
@@ -28,6 +29,14 @@ def top_messages(logfile, n):
     return Counter(messages).most_common(n)
 
 
+def find_ips(logfile):
+    counts = Counter()
+    with open(logfile, "r") as f:
+        for line in f:
+            for ip in re.findall(r"\d+\.\d+\.\d+\.\d+", line):
+                counts[ip] += 1
+    return counts
+
 def loud_levels(counts):
     return {k: v for k, v in counts.items() if v >= 2}
 
@@ -56,6 +65,7 @@ def main():
     parser.add_argument("--group", action="store_true", help="group messages by level")
     parser.add_argument("--rank", type=int, help="show the N most common levels")
     parser.add_argument("--unique", action="store_true", help="show the distinct levels")
+    parser.add_argument("--ips", action="store_true", help="count IP addresses in the log")
     args = parser.parse_args()
 
 
@@ -79,6 +89,10 @@ def main():
     elif args.unique:
         levels = unique_levels(args.logfile)
         print(f"{len(levels)} unique levels: {levels}")
+    elif args.ips:
+        counts = find_ips(args.logfile)
+        for ip, count in counts.most_common():
+            print(f"{ip}: {count}")
     else:
         print(count_levels(args.logfile).most_common())
 
