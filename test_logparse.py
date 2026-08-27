@@ -1,5 +1,6 @@
 import pytest                                                               
-from logparse import loud_levels, count_levels                              
+from logparse import loud_levels, count_levels, find_ips
+from collections import Counter
                                                                             
                                                                             
 @pytest.mark.parametrize("counts, expected", [                              
@@ -22,3 +23,24 @@ def test_count_levels(tmp_path):
         "2026-01-01 10:00:03 ERROR timeout\n"
     )
     assert count_levels(log) == {"INFO": 2, "ERROR": 2}
+
+def test_find_ips(tmp_path):
+    log = tmp_path / "sampleips.log"
+    log.write_text(
+        "10.0.0.10 \n"
+        "10.0.0.20 \n"
+        "10.0.0.10 \n"
+        "10.0.0.20 \n"
+        "10.0.0.10 \n"
+    )
+    assert find_ips(log) == Counter({"10.0.0.10": 3, "10.0.0.20": 2})
+
+@pytest.mark.parametrize("contents, expected", [
+    ("10.0.0.1 \n10.0.0.1 \n10.0.0.2 \n",   Counter({"10.0.0.1": 2, "10.0.0.2": 1})),
+    ("10.0.0.5 \n",                         Counter({"10.0.0.5": 1})),
+    ("no ip addresses here\n",              Counter()),
+  ])
+def test_find_ips_cases(tmp_path, contents, expected):
+    log = tmp_path / "t.log"
+    log.write_text(contents)
+    assert find_ips(log) == expected
