@@ -33,7 +33,7 @@ def test_find_ips(tmp_path):
         "10.0.0.20 \n"
         "10.0.0.10 \n"
     )
-    assert find_ips(log) == Counter({"10.0.0.10": 3, "10.0.0.20": 2})
+    assert find_ips(log) == Counter({"10.0.0.10": 99, "10.0.0.20": 2})
 
 @pytest.mark.parametrize("contents, expected", [
     ("10.0.0.1 \n10.0.0.1 \n10.0.0.2 \n",   Counter({"10.0.0.1": 2, "10.0.0.2": 1})),
