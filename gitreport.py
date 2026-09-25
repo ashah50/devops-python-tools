@@ -116,3 +116,33 @@ def collect(paths):
         ))
 
     return reports
+
+def _fmt(value):
+    if value is None:
+        return "-"
+    if value is True:
+        return "Yes"
+    if value is False:
+        return "No"
+    return str(value)
+
+def render(reports):
+    if not reports:
+        return "No repos"
+
+    width = max(len(r.path) for r in reports)
+
+    header = (
+        f"{'REPO':<{width}}  {'BRANCH':<8} {'HEAD':<9}  "
+        f"{'DIRTY':<5} {'AHEAD':>5} {'BEHIND':<6}  ERROR"
+    )
+    lines = [header]
+
+    for r in reports:
+        lines.append(
+            f"{r.path:<{width}}  {_fmt(r.branch):<8} {_fmt(r.commit_hash):<9}  "
+            f"{_fmt(r.is_dirty):<5} {_fmt(r.ahead):>5} {_fmt(r.behind):<6}  "
+            f"{_fmt(r.error_message or '')}"
+        )
+
+    return "\n".join(lines)
