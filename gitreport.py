@@ -1,7 +1,7 @@
-from importlib.resources import path
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+import argparse
 
 @dataclass
 class GitResult:
@@ -146,3 +146,14 @@ def render(reports):
         )
 
     return "\n".join(lines)
+
+def main():
+    parser = argparse.ArgumentParser(description="Report on the state of git repos")
+    parser.add_argument("paths", nargs="+", help="repo paths to report on")
+    args = parser.parse_args()
+
+    print(render(collect(args.paths)))
+
+
+if __name__ == "__main__":
+    main()
