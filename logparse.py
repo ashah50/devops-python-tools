@@ -1,6 +1,26 @@
+import logging
 import argparse
 import re
 from collections import Counter, defaultdict
+from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+class LogLine:
+    raw: str
+    date: str
+    time: str
+    level: str
+    message: str
+
+def parse_line(line):
+    line = line.strip()
+    parts = line.split(maxsplit=3)
+    if len(parts) < 4:
+        logger.warning("skipping malformed line: %r", line)
+        return None
+    return LogLine(line, *parts)
 
 def find_lines(logfile, level):
     matches = []
