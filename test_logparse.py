@@ -1,5 +1,5 @@
 import pytest
-from logparse import loud_levels, count_levels, find_ips, unique_levels, find_lines
+from logparse import loud_levels, count_levels, find_ips, unique_levels, find_lines, group_by_level
 from collections import Counter
 
 @pytest.fixture
@@ -55,3 +55,19 @@ def test_find_ips(sample_log):
 def test_find_ips_cases(make_log, contents, expected):
     log = make_log(contents)
     assert find_ips(log) == expected
+
+def test_group_by_level(sample_log):
+    expected = {
+        "ERROR": [
+            "disk full 10.0.0.10",
+            "timeout 10.0.0.10",
+        ],
+        "INFO": [
+            "ready 10.0.0.20",
+            "connection reset 10.0.0.20",
+        ],
+        "WARN": [
+            "resources low 10.0.0.10",
+        ]
+    }
+    assert group_by_level(sample_log) == expected
