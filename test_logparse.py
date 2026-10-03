@@ -1,5 +1,5 @@
 import pytest
-from logparse import loud_levels, count_levels, find_ips, unique_levels, find_lines, group_by_level
+from logparse import loud_levels, count_levels, find_ips, unique_levels, find_lines, group_by_level, top_messages
 from collections import Counter
 
 @pytest.fixture
@@ -71,3 +71,19 @@ def test_group_by_level(sample_log):
         ]
     }
     assert group_by_level(sample_log) == expected
+
+def test_top_messages(make_log):
+    log_contents = (
+        "2026-09-12 04:44:00 ERROR timeout 10.0.0.10\n"
+        "2026-09-12 05:00:00 ERROR timeout 10.0.0.10\n"
+        "2026-09-12 05:15:00 ERROR timeout 10.0.0.10\n"
+        "2026-09-12 06:01:23 INFO  ready 10.0.0.20\n"
+        "2026-09-12 06:30:00 INFO  ready 10.0.0.20\n"
+        "2026-09-12 07:00:00 WARN  disk full 10.0.0.30\n"
+    )
+    log_file = make_log(log_contents)
+    expected = [
+        ("timeout 10.0.0.10", 3),
+        ("ready 10.0.0.20", 2),
+    ]
+    assert top_messages(log_file, n=2) == expected
