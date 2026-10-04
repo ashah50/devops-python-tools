@@ -26,26 +26,31 @@ def find_lines(logfile, level):
     matches = []
     with open(logfile) as f:
         for line in f:
-            line = line.strip()
-            parts = line.split(maxsplit=3)
-            if parts[2] == level:
-                matches.append(line)
+            parsed = parse_line(line)
+            if parsed is None:
+                continue
+            if parsed.level == level:
+                matches.append(parsed.raw)
     return matches  
 
 def count_levels(logfile):
     counts = Counter()
     with open(logfile) as f:
         for line in f:
-            parts = line.split(maxsplit=3)
-            counts[parts[2]] += 1
+            parsed = parse_line(line)
+            if parsed is None:
+                continue
+            counts[parsed.level] += 1
     return counts
 
 def top_messages(logfile, n):
     messages = []
     with open(logfile) as f:
         for line in f:
-            parts = line.split(maxsplit=3)
-            messages.append(parts[3].strip())
+            parsed = parse_line(line)
+            if parsed is None:
+                continue
+            messages.append(parsed.message)
     return Counter(messages).most_common(n)
 
 
@@ -64,16 +69,20 @@ def group_by_level(logfile):
     groups = defaultdict(list)
     with open(logfile) as f:
         for line in f:
-            parts = line.split(maxsplit=3)
-            groups[parts[2]].append(parts[3].strip())
+            parsed = parse_line(line)
+            if parsed is None:
+                continue
+            groups[parsed.level].append(parsed.message)
     return groups
 
 def unique_levels(logfile):
     levels = set()
     with open(logfile) as f:
         for line in f:
-            parts = line.split(maxsplit=3)
-            levels.add(parts[2])
+            parsed = parse_line(line)
+            if parsed is None:
+                continue
+            levels.add(parsed.level)
     return levels
 
 def main():
